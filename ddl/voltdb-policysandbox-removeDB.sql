@@ -1,5 +1,5 @@
 
-DROP TASK ChangePoliciesTask;
+DROP TASK ChangePoliciesTask IF EXISTS;
 
 DROP PROCEDURE ShowPolicyStatus__promBL IF EXISTS;
 
@@ -13,27 +13,29 @@ DROP PROCEDURE ReportSessionUsage IF EXISTS;
    
 DROP PROCEDURE ChangePolicies IF EXISTS;
 
-DROP TOPIC console_messages;
+DROP PROCEDURE ChangeCellAllocation IF EXISTS;
 
-DROP TOPIC policy_change_session_messages;
+DROP TOPIC console_messages IF EXISTS;
 
-DROP VIEW session_policy_cell_users;
+DROP TOPIC policy_change_session_messages IF EXISTS;
 
-DROP VIEW cell_activity_summary;
+DROP VIEW session_policy_cell_users IF EXISTS;
 
-DROP TABLE policy_parameters ;
+DROP VIEW cell_activity_summary IF EXISTS;
 
-DROP TABLE available_policies;
+DROP TABLE policy_parameters  IF EXISTS;
 
-DROP TABLE session_policy_state;
+DROP TABLE available_policies IF EXISTS;
+
+DROP TABLE session_policy_state IF EXISTS;
      
-DROP TABLE policy_active_limits_by_cell;
+DROP TABLE policy_active_limits_by_cell IF EXISTS;
      
-DROP STREAM cell_activity;
+DROP STREAM cell_activity IF EXISTS;
 
-DROP STREAM policy_change_session_messages;
+DROP STREAM policy_change_session_messages IF EXISTS;
 
-DROP STREAM console_messages;
+DROP STREAM console_messages IF EXISTS;
 
 
 

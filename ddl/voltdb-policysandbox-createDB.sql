@@ -44,7 +44,7 @@ CREATE INDEX sps_ix2 ON session_policy_state (cell_id,last_policy_update_date);
 CREATE INDEX sps_ix3 ON session_policy_state (cell_id,policy_name,last_policy_update_date);
 
 --
--- View to track stale  session_policy_state records
+-- View to track session_policy_state records
 --
 CREATE VIEW session_policy_cell_users AS
 SELECT cell_id, policy_name
@@ -164,6 +164,10 @@ CREATE PROCEDURE
    
 DROP PROCEDURE ChangePolicies IF EXISTS;
 
+CREATE PROCEDURE 
+   PARTITION ON TABLE session_policy_state COLUMN cell_id
+   FROM CLASS policysandbox.ChangeCellAllocation;  
+   
 CREATE PROCEDURE DIRECTED
    FROM CLASS policysandbox.ChangePolicies;  
    
