@@ -70,7 +70,7 @@ public class SteppedPolicyChange extends VoltProcedure {
                     + "FROM session_policy_state "
                     + "WHERE cell_id = ? "
                     + "AND   policy_name = ? "
-                    + "AND   mod(sessionId,100) = ?; ");
+                    + "AND   mod(sessionId,100) = CAST(? AS BIGINT); ");
     
     public static final SQLStmt updateStatus 
     = new SQLStmt("UPDATE policy_active_limits_by_cell "
