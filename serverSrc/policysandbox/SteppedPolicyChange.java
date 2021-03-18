@@ -111,7 +111,7 @@ public class SteppedPolicyChange extends VoltProcedure {
             byte pctDone = (byte) changeTable.getLong("policy_change_percent_done");
             long newLimit = changeTable.getLong("current_limit_per_user");
 
-            voltQueueSQL(sendMessageToDevice, newLimit, cellId, policyName, pctDone);
+            voltQueueSQL(sendMessageToDevice, newLimit, cellId, policyName, ++pctDone);
 
             if (pctDone < 99) {
                 voltQueueSQL(updateStatus, pctDone, cellId, policyName);
