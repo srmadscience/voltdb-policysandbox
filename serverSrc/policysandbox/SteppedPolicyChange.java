@@ -120,11 +120,11 @@ public class SteppedPolicyChange extends VoltProcedure {
             if (pctDone < 99) {
                 voltQueueSQL(updateStatus, pctDone, cellId, policyName);
                 voltQueueSQL(sendMessageToConsole, cellId,
-                        "Cell/Policy change @" + nextChangeTimestamp.toString() + " " + pctDone + "% done.");
+                        "Cell/Policy " + cellId + "/" + policyName + " change @" + nextChangeTimestamp.toString() + " " + pctDone + "% done.");
             } else {
                 voltQueueSQL(finishTask, cellId, policyName);
                 voltQueueSQL(sendMessageToConsole, cellId,
-                        "Cell/Policy change @" + nextChangeTimestamp.toString() + " finished.");
+                        "Cell/Policy " + cellId + "/" + policyName + " change @" + nextChangeTimestamp.toString() + " " + pctDone + "% done.");
             }
 
         }
