@@ -61,6 +61,8 @@ public class ChangePolicies extends VoltProcedure {
     "AND   spcu.policy_name = palbc.policy_name " +
     "AND   cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)) " +
     "AND   cas.total_usage_amount > palbc.current_limit_per_cell " +
+    "AND   palbc.policy_change_started  IS NULL " +
+    "AND   palbc.last_update_date  <=  TRUNCATE(MINUTE, DATEADD(MINUTE,-2,NOW))" +
     "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
     "LIMIT 20; ");
 
@@ -82,7 +84,9 @@ public class ChangePolicies extends VoltProcedure {
     "AND   spcu.policy_name = palbc.policy_name " +
     "AND   cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)) " +
     "AND   (cas.total_usage_amount * 1.1) < palbc.current_limit_per_cell " +
-    "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
+    "AND   palbc.policy_change_started  IS NULL " +
+    "AND   palbc.last_update_date  <=  TRUNCATE(MINUTE, DATEADD(MINUTE,-2,NOW))" +
+   "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
     "LIMIT 20; ");
 
     public static final SQLStmt updateCellLimit = new SQLStmt(
@@ -169,7 +173,10 @@ public class ChangePolicies extends VoltProcedure {
             String event;
             long targetLimitPerUser;
 
-            if (cellPctFull > panicShrinkPct) {
+            if (cellPctFull > 1000) {
+                event = "PanicShrink";
+                targetLimitPerUser = (long) currentLimitPerUser / 10;
+            } else if (cellPctFull > panicShrinkPct) {
                 event = "PanicShrink";
                 targetLimitPerUser = (long) ((currentLimitPerUser * panicShrinkPct) / cellPctFull);
             } else {
