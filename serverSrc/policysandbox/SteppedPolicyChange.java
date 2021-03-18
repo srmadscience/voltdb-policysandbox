@@ -98,14 +98,14 @@ public class SteppedPolicyChange extends VoltProcedure {
         voltQueueSQL(findNextChange);
         VoltTable nextChangeExistsTable = voltExecuteSQL()[0];
 
-        if (nextChangeExistsTable.advanceRow()) {
-            
-            TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
-            
-            System.out.println("time=" + nextChangeExistsTable.getRowCount());
+        nextChangeExistsTable.advanceRow();
+        TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
+
+        if (nextChangeTimestamp != null) {
+
             voltQueueSQL(getChange, nextChangeTimestamp);
             VoltTable changeTable = voltExecuteSQL()[0];
-            
+
             changeTable.advanceRow();
 
             String policyName = changeTable.getString("policy_name");
@@ -119,12 +119,12 @@ public class SteppedPolicyChange extends VoltProcedure {
 
             if (pctDone < 99) {
                 voltQueueSQL(updateStatus, pctDone, cellId, policyName);
-                voltQueueSQL(sendMessageToConsole,cellId, "Cell/Policy change @" + nextChangeTimestamp.toString() 
-                + " " + pctDone + "% done.");
+                voltQueueSQL(sendMessageToConsole, cellId,
+                        "Cell/Policy change @" + nextChangeTimestamp.toString() + " " + pctDone + "% done.");
             } else {
                 voltQueueSQL(finishTask, cellId, policyName);
-                voltQueueSQL(sendMessageToConsole,cellId, "Cell/Policy change @" + nextChangeTimestamp.toString() 
-                + " finished.");
+                voltQueueSQL(sendMessageToConsole, cellId,
+                        "Cell/Policy change @" + nextChangeTimestamp.toString() + " finished.");
             }
 
         }
