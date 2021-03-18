@@ -323,7 +323,7 @@ VALUES
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('USER_CELL_FRACTION_OF',2000000);
+('USER_CELL_FRACTION_OF',2000);
 
 upsert into policy_parameters
 (parameter_name ,parameter_value)

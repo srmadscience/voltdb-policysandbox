@@ -61,6 +61,7 @@ public class ChangePolicies extends VoltProcedure {
     "AND   spcu.policy_name = palbc.policy_name " +
     "AND   cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)) " +
     "AND   cas.total_usage_amount > palbc.current_limit_per_cell " +
+    "AND   palbc.last_update_date  < TRUNCATE(MINUTE, DATEADD(MINUTE,-2,NOW)) " +
     "AND   palbc.policy_change_started  IS NULL " +
     "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
     "LIMIT 20; ");
@@ -83,6 +84,7 @@ public class ChangePolicies extends VoltProcedure {
     "AND   spcu.policy_name = palbc.policy_name " +
     "AND   cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)) " +
     "AND   (cas.total_usage_amount * 1.1) < palbc.current_limit_per_cell " +
+    "AND   palbc.last_update_date  < TRUNCATE(MINUTE, DATEADD(MINUTE,-2,NOW)) " +
     "AND   palbc.policy_change_started  IS NULL " +
    "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
     "LIMIT 20; ");
@@ -171,18 +173,19 @@ public class ChangePolicies extends VoltProcedure {
             String event;
             long targetLimitPerUser;
 
-            if (cellPctFull > 1000) {
-                event = "PanicShrink";
-                targetLimitPerUser = (long) currentLimitPerUser / 10;
-            } else if (cellPctFull > panicShrinkPct) {
+            if (cellPctFull > panicShrinkPct) {
+
                 event = "PanicShrink";
                 targetLimitPerUser = (long) ((currentLimitPerUser * panicShrinkPct) / cellPctFull);
+
             } else {
+                
                 event = "Shrink:";
                 targetLimitPerUser = (currentLimitPerUser * shrinkPct) / 100;
             }
 
             if (targetLimitPerUser < minBandwidthPerMin) {
+                
                 event = "ShrinkHitLimit";
                 targetLimitPerUser = minBandwidthPerMin;
             }
@@ -195,7 +198,7 @@ public class ChangePolicies extends VoltProcedure {
                                 + targetLimitPerUser + " for " + userCount + " users. Current Avg is "
                                 + averageAmountPerUser);
                 voltQueueSQL(updateCellLimit, targetLimitPerUser, cellId, policyName);
-                
+
                 if (maxSessonsPerChange < userCount) {
                     voltQueueSQL(startSteppedUpdate, cellId, policyName);
                 } else {
@@ -242,7 +245,7 @@ public class ChangePolicies extends VoltProcedure {
                         + policyName + " is at " + cellPctFull + "%. Growing " + " from " + currentLimitPerUser + " to "
                         + targetLimitPerUser + " for " + userCount + " users. Current Avg is " + averageAmountPerUser);
                 voltQueueSQL(updateCellLimit, targetLimitPerUser, cellId, policyName);
-                
+
                 if (maxSessonsPerChange < userCount) {
                     voltQueueSQL(startSteppedUpdate, cellId, policyName);
                 } else {
