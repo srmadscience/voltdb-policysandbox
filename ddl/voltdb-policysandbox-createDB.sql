@@ -122,7 +122,7 @@ FROM policy_change_session_messages
 GROUP BY cell_id
      , TRUNCATE(MINUTE, DATEADD(MINUTE,-1,changeTimestamp)) ;
      
-CREATE INDEX pcc_ix1 ON   policy_change_session_messages(changeTimestamp);   
+CREATE INDEX pcc_ix1 ON   policy_change_counts(changeTimestamp);   
        
 CREATE STREAM console_messages PARTITION ON COLUMN thing_id 
 (thing_id bigint not null 

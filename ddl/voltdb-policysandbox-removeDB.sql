@@ -1,6 +1,8 @@
 
 DROP TASK ChangePoliciesTask IF EXISTS;
 
+DROP TASK SteppedPolicyChangeTask IF EXISTS;
+
 DROP PROCEDURE ShowPolicyStatus__promBL IF EXISTS;
 
 DROP PROCEDURE findbusycells IF EXISTS;
@@ -12,6 +14,8 @@ DROP PROCEDURE ReportEndSession IF EXISTS;
 DROP PROCEDURE ReportSessionUsage IF EXISTS;
    
 DROP PROCEDURE ChangePolicies IF EXISTS;
+
+DROP PROCEDURE SteppedPolicyChange IF EXISTS;
 
 DROP PROCEDURE ChangeCellAllocation IF EXISTS;
 
