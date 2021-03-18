@@ -40,8 +40,7 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     // @formatter:off
     
-       
-    public static final SQLStmt findNextChange 
+     public static final SQLStmt findNextChange 
     = new SQLStmt("SELECT MIN(policy_change_started)  policy_change_started "
             + "FROM policy_active_limits_by_cell;");
 
@@ -94,8 +93,14 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     public VoltTable[] run() throws VoltAbortException {
 
+        voltQueueSQL(getParameter, "STEPPED_CHANGE_BATCH_SIZE");
         voltQueueSQL(findNextChange);
-        VoltTable nextChangeExistsTable = voltExecuteSQL()[0];
+        VoltTable[] firstQueryResults = voltExecuteSQL();
+        VoltTable batchSizeParameterTable = firstQueryResults[0];
+        
+        long batchSize = getParameter(2,batchSizeParameterTable);
+
+        VoltTable nextChangeExistsTable = firstQueryResults[1];
 
         nextChangeExistsTable.advanceRow();
         TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
@@ -111,8 +116,6 @@ public class SteppedPolicyChange extends VoltProcedure {
             long cellId = changeTable.getLong("cell_id");
             byte pctDone = (byte) changeTable.getLong("policy_change_percent_done");
             long newLimit = changeTable.getLong("current_limit_per_user");
-
-            pctDone++;
 
             voltQueueSQL(sendMessageToDevice, newLimit, cellId, policyName, pctDone);
 
@@ -134,4 +137,5 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     }
 
+      
 }
