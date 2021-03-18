@@ -93,15 +93,9 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     public VoltTable[] run() throws VoltAbortException {
 
-        voltQueueSQL(getParameter, "STEPPED_CHANGE_BATCH_SIZE");
         voltQueueSQL(findNextChange);
-        VoltTable[] firstQueryResults = voltExecuteSQL();
-        VoltTable batchSizeParameterTable = firstQueryResults[0];
-        
-        long batchSize = getParameter(2,batchSizeParameterTable);
-
-        VoltTable nextChangeExistsTable = firstQueryResults[1];
-
+        VoltTable nextChangeExistsTable = voltExecuteSQL()[0];
+  
         nextChangeExistsTable.advanceRow();
         TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
 
