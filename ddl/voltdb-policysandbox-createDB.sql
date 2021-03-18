@@ -33,7 +33,7 @@ CREATE TABLE session_policy_state
 	 last_policy_update_date timestamp not null,
 	 primary key (sessionId,sessionStartUTC,cell_id)
 )
-USING TTL 25 HOURS ON COLUMN last_policy_update_date BATCH_SIZE 50000;
+USING TTL 3 HOURS ON COLUMN last_policy_update_date BATCH_SIZE 50000;
 
 PARTITION TABLE session_policy_state ON COLUMN cell_id;
 
@@ -42,6 +42,8 @@ CREATE INDEX sps_ix1 ON session_policy_state (last_policy_update_date);
 CREATE INDEX sps_ix2 ON session_policy_state (cell_id,last_policy_update_date);
 
 CREATE INDEX sps_ix3 ON session_policy_state (cell_id,policy_name,last_policy_update_date);
+
+CREATE INDEX sps_ix4 ON session_policy_state (cell_id,policy_name,mod(sessionId,100));
 
 --
 -- View to track session_policy_state records
@@ -92,11 +94,13 @@ CREATE TABLE policy_active_limits_by_cell
 ,current_limit_per_cell  bigint not null 
 ,current_limit_per_user  bigint not null 
 ,last_update_date timestamp not null
+,policy_change_started timestamp
+,policy_change_percent_done tinyint
 ,primary key (cell_id,policy_name));
      
 PARTITION TABLE policy_active_limits_by_cell ON COLUMN cell_id;
 
-
+CREATE INDEX palbc_ix1 ON policy_active_limits_by_cell(policy_change_started);
 --
 -- Stream so we can tell sessions to limit
 -- their activity
@@ -110,6 +114,16 @@ CREATE STREAM policy_change_session_messages PARTITION ON COLUMN cell_id
 
 CREATE TOPIC USING STREAM policy_change_session_messages PROFILE daily;
 
+CREATE VIEW policy_change_counts  AS
+SELECT cell_id
+     , TRUNCATE(MINUTE, DATEADD(MINUTE,-1,changeTimestamp))  changeTimestamp
+     , count(*) how_many
+FROM policy_change_session_messages
+GROUP BY cell_id
+     , TRUNCATE(MINUTE, DATEADD(MINUTE,-1,changeTimestamp)) ;
+     
+CREATE INDEX pcc_ix1 ON   policy_change_session_messages(changeTimestamp);   
+       
 CREATE STREAM console_messages PARTITION ON COLUMN thing_id 
 (thing_id bigint not null 
 ,message_date timestamp not null
@@ -177,6 +191,15 @@ PROCEDURE ChangePolicies
 ON ERROR LOG 
 RUN ON PARTITIONS;
    
+CREATE PROCEDURE DIRECTED
+   FROM CLASS policysandbox.SteppedPolicyChange;  
+   
+CREATE TASK SteppedPolicyChangeTask
+ON SCHEDULE  EVERY 1 SECONDS
+PROCEDURE SteppedPolicyChange
+ON ERROR LOG 
+RUN ON PARTITIONS;
+   
 
 CREATE PROCEDURE ShowPolicyStatus__promBL AS
 BEGIN
@@ -190,7 +213,7 @@ SELECT 'cell_activity_cell_pct_full' statname
      , 'cell_activity_cell_pct_full' stathelp
                , cas.cell_id
                , cas.policy_name
-               , (cas.total_usage_amount * 100)/  palbc.current_limit_per_cell  cell_pct_full
+               , (cas.total_usage_amount * 100)/  palbc.current_limit_per_cell  statvalue
        FROM   cell_activity_summary cas  
           ,   policy_active_limits_by_cell palbc
       WHERE cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW))    
@@ -224,14 +247,37 @@ SELECT 'policy_min_bandwidth_per_min' statname
        FROM   available_policies ap
        ORDER BY ap.policy_name ; 
 --
+SELECT 'total_policy_change_messages' statname
+     , 'total_policy_change_messages' stathelp
+               , nvl(sum(pcc.how_many),0)   statvalue
+       FROM   policy_change_counts pcc
+       WHERE pcc.changeTimestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)); 
+--
 SELECT 'cell_activity_total_usage_amount' statname
      , 'cell_activity_total_usage_amount' stathelp
+     ,cas.policy_name
+     , cas.cell_id
+     , sum(cas.total_usage_amount) statvalue
+       FROM   cell_activity_summary cas    
+      WHERE cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW))
+      GROUP BY cas.policy_name, cas.cell_id
+      ORDER BY cas.policy_name, cas.cell_id; 
+--
+SELECT 'cell_activity_usage_reports' statname
+     , 'cell_activity_usage_reports' stathelp
                , cas.cell_id
                , cas.policy_name
-               , cas.total_usage_amount statvalue
+               , cas.how_many statvalue
        FROM   cell_activity_summary cas    
       WHERE cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW))    
      ORDER BY cas.cell_id, cas.policy_name ; 
+--
+SELECT 'session_user_count' statname
+     , 'session_user_count' stathelp
+               , spcu.cell_id
+               , spcu.policy_name
+               , spcu.active_users statvalue
+       FROM   session_policy_cell_users spcu; 
 --
 SELECT 'cell_activity_current_limit_per_cell' statname
      , 'cell_activity_current_limit_per_cell' stathelp
@@ -262,7 +308,7 @@ VALUES
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('SHRINK_PCT',75);
+('SHRINK_PCT',95);
 
 upsert into policy_parameters
 (parameter_name ,parameter_value)
@@ -283,6 +329,12 @@ upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
 ('DEFAULT_CELL_TOTAL_CAPACITY',2000000000);
+
+
+upsert into policy_parameters
+(parameter_name ,parameter_value)
+VALUES
+('MAX_SESSIONS_PER_SINGLE_CHANGE',100000);
 
 
 

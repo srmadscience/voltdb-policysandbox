@@ -21,6 +21,8 @@ DROP TOPIC policy_change_session_messages IF EXISTS;
 
 DROP VIEW session_policy_cell_users IF EXISTS;
 
+DROP VIEW policy_change_counts IF EXISTS;
+
 DROP VIEW cell_activity_summary IF EXISTS;
 
 DROP TABLE policy_parameters  IF EXISTS;

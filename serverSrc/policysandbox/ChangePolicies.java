@@ -91,7 +91,13 @@ public class ChangePolicies extends VoltProcedure {
             + "  , last_update_date = NOW "
             + "WHERE cell_id = ? "
             + "AND   policy_name = ?;");
-       
+  
+    public static final SQLStmt startSteppedUpdate = new SQLStmt(
+            "UPDATE policy_active_limits_by_cell "
+            + "SET policy_change_percent_done = 0"
+            + "  , policy_change_started = NOW "
+            + "WHERE cell_id = ? "
+            + "AND   policy_name = ?;");
  
     public static final SQLStmt sendMessageToDevice = new SQLStmt(
             "INSERT INTO policy_change_session_messages  " +
@@ -106,8 +112,8 @@ public class ChangePolicies extends VoltProcedure {
                     + " cell_id, CAST(? AS BIGINT) "
                     + "FROM session_policy_state "
                     + "WHERE cell_id = ? "
-                    + "AND   policy_name = ? "
-                    + "ORDER BY sessionId,sessionStartUTC,cell_id;");
+                    + "AND   policy_name = ?; ");
+                   // + "ORDER BY sessionId,sessionStartUTC,cell_id;");
 
     public static final SQLStmt sendMessageToConsole = new SQLStmt(
             "INSERT INTO console_messages  " +
@@ -123,11 +129,13 @@ public class ChangePolicies extends VoltProcedure {
         long shrinkPct = 0;
         long panicShrinkPct = 1000;
         boolean enablePolicy = false;
+        long maxSessonsPerChange = 100000;
 
         voltQueueSQL(getParameter, "ENABLE_POLICY_ENFORCEMENT");
         voltQueueSQL(getParameter, "SHRINK_PCT");
         voltQueueSQL(getParameter, "PANIC_SHRINK_PCT");
         voltQueueSQL(getParameter, "GROW_PCT");
+        voltQueueSQL(getParameter, "MAX_SESSIONS_PER_SINGLE_CHANGE");
         voltQueueSQL(findOverloadedCells);
         voltQueueSQL(findUnderloadedCells);
 
@@ -137,14 +145,16 @@ public class ChangePolicies extends VoltProcedure {
         VoltTable shrinkPctResult = queryResults[1];
         VoltTable panicShrinkPctResult = queryResults[2];
         VoltTable growPctResult = queryResults[3];
+        VoltTable maxSessonsPerChangeResult = queryResults[4];
 
         enablePolicy = getParameter(enablePolicy, enablePolicyResult);
         shrinkPct = getParameter(shrinkPct, shrinkPctResult);
         panicShrinkPct = getParameter(panicShrinkPct, panicShrinkPctResult);
         growPct = getParameter(growPct, growPctResult);
+        maxSessonsPerChange = getParameter(maxSessonsPerChange, maxSessonsPerChangeResult);
 
-        VoltTable overloadedCellResult = queryResults[4];
-        VoltTable underloadedCellResult = queryResults[5];
+        VoltTable overloadedCellResult = queryResults[5];
+        VoltTable underloadedCellResult = queryResults[6];
 
         while (overloadedCellResult.advanceRow()) {
 
@@ -161,7 +171,7 @@ public class ChangePolicies extends VoltProcedure {
 
             if (cellPctFull > panicShrinkPct) {
                 event = "PanicShrink";
-                targetLimitPerUser = (long) ((averageAmountPerUser * panicShrinkPct * 1.1) / cellPctFull);
+                targetLimitPerUser = (long) ((currentLimitPerUser * panicShrinkPct) / cellPctFull);
             } else {
                 event = "Shrink:";
                 targetLimitPerUser = (currentLimitPerUser * shrinkPct) / 100;
@@ -180,10 +190,13 @@ public class ChangePolicies extends VoltProcedure {
                                 + targetLimitPerUser + " for " + userCount + " users. Current Avg is "
                                 + averageAmountPerUser);
                 voltQueueSQL(updateCellLimit, targetLimitPerUser, cellId, policyName);
-                voltQueueSQL(sendMessageToDevice, targetLimitPerUser, cellId, policyName);
+                
+                if (maxSessonsPerChange < userCount) {
+                    voltQueueSQL(startSteppedUpdate, cellId, policyName);
+                } else {
+                    voltQueueSQL(sendMessageToDevice, targetLimitPerUser, cellId, policyName);
+                }
 
-            } else {
-                // TODO
             }
 
             voltExecuteSQL();
@@ -206,6 +219,13 @@ public class ChangePolicies extends VoltProcedure {
             event = "Grow:";
             targetLimitPerUser = (currentLimitPerUser * growPct) / 100;
 
+            // fix bug: If your growPct <= <10 and GROW_PCT is 105 you won't get an
+            // increase.
+            // Force one...
+            if (targetLimitPerUser <= currentLimitPerUser) {
+                targetLimitPerUser++;
+            }
+
             if (targetLimitPerUser > maxBandwidthPerMin) {
                 event = "GrowHitLimit";
                 targetLimitPerUser = maxBandwidthPerMin;
@@ -217,10 +237,13 @@ public class ChangePolicies extends VoltProcedure {
                         + policyName + " is at " + cellPctFull + "%. Growing " + " from " + currentLimitPerUser + " to "
                         + targetLimitPerUser + " for " + userCount + " users. Current Avg is " + averageAmountPerUser);
                 voltQueueSQL(updateCellLimit, targetLimitPerUser, cellId, policyName);
-                voltQueueSQL(sendMessageToDevice, targetLimitPerUser, cellId, policyName);
+                
+                if (maxSessonsPerChange < userCount) {
+                    voltQueueSQL(startSteppedUpdate, cellId, policyName);
+                } else {
+                    voltQueueSQL(sendMessageToDevice, targetLimitPerUser, cellId, policyName);
+                }
 
-            } else {
-                // TODO
             }
 
             voltExecuteSQL();
