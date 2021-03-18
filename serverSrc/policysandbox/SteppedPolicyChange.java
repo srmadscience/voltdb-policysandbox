@@ -45,7 +45,10 @@ public class SteppedPolicyChange extends VoltProcedure {
             + "FROM policy_active_limits_by_cell;");
 
   
-    public static final SQLStmt getChange 
+     public static final SQLStmt getParameter = new SQLStmt(
+             "SELECT parameter_value FROM policy_parameters WHERE parameter_name = ? ;");
+
+     public static final SQLStmt getChange 
     = new SQLStmt("SELECT policy_change_percent_done,cell_id,policy_name"
             + ", current_limit_per_user "
             + "FROM policy_active_limits_by_cell "
@@ -93,9 +96,18 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     public VoltTable[] run() throws VoltAbortException {
 
+        
+        voltQueueSQL(getParameter, "MAX_PCT_PER_STEPPED_CHANGE");
         voltQueueSQL(findNextChange);
-        VoltTable nextChangeExistsTable = voltExecuteSQL()[0];
-
+        
+        VoltTable[] queryResults = voltExecuteSQL();
+        
+        
+        VoltTable maxPctStepedChangeTable = queryResults[0];
+        final long maxPctPerPass = getParameter(2,maxPctStepedChangeTable);
+       
+        VoltTable nextChangeExistsTable = queryResults[1];
+        
         nextChangeExistsTable.advanceRow();
         TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
 
@@ -111,7 +123,6 @@ public class SteppedPolicyChange extends VoltProcedure {
             byte pctDone = (byte) changeTable.getLong("policy_change_percent_done");
             long newLimit = changeTable.getLong("current_limit_per_user");
 
-            final int maxPctPerPass = 2;
             int pctThisPass = 0;
 
             while (pctDone < 99 && ++pctThisPass <= maxPctPerPass) {
@@ -134,4 +145,12 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     }
 
+    protected long getParameter(long value, VoltTable parameterTable) {
+        if (parameterTable.advanceRow()) {
+            value = parameterTable.getLong("parameter_value");
+        }
+        return value;
+    }
+
+    
 }

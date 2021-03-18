@@ -336,6 +336,11 @@ upsert into policy_parameters
 VALUES
 ('MAX_SESSIONS_PER_SINGLE_CHANGE',100000);
 
+upsert into policy_parameters
+(parameter_name ,parameter_value)
+VALUES
+('MAX_PCT_PER_STEPPED_CHANGE',2);
+
 
 
 UPSERT INTO available_policies
