@@ -43,7 +43,7 @@ public class SteppedPolicyChange extends VoltProcedure {
        
     public static final SQLStmt findNextChange 
     = new SQLStmt("SELECT MIN(policy_change_started)  policy_change_started "
-            + "FROM policy_active_limits_by_cell"
+            + "FROM policy_active_limits_by_cell "
             + "WHERE policy_change_started IS NOT NULL;");
 
   
