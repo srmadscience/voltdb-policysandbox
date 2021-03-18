@@ -42,11 +42,14 @@ public class SteppedPolicyChange extends VoltProcedure {
     
        
     public static final SQLStmt findNextChange 
-    = new SQLStmt("SELECT MIN(policy_change_started)  policy_change_started FROM policy_active_limits_by_cell;");
+    = new SQLStmt("SELECT MIN(policy_change_started)  policy_change_started "
+            + "FROM policy_active_limits_by_cell"
+            + "WHERE policy_change_started IS NOT NULL;");
 
   
     public static final SQLStmt getChange 
-    = new SQLStmt("SELECT policy_change_percent_done,cell_id,policy_name "
+    = new SQLStmt("SELECT policy_change_percent_done,cell_id,policy_name"
+            + ", current_limit_per_user "
             + "FROM policy_active_limits_by_cell "
             + "WHERE policy_change_started = ? "
             + "ORDER BY cell_id,policy_name "
@@ -96,18 +99,21 @@ public class SteppedPolicyChange extends VoltProcedure {
         VoltTable nextChangeExistsTable = voltExecuteSQL()[0];
 
         if (nextChangeExistsTable.advanceRow()) {
+            
             TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
             voltQueueSQL(getChange, nextChangeTimestamp);
             VoltTable changeTable = voltExecuteSQL()[0];
+            
             changeTable.advanceRow();
 
             String policyName = changeTable.getString("policy_name");
             long cellId = changeTable.getLong("cell_id");
             byte pctDone = (byte) changeTable.getLong("policy_change_percent_done");
+            long newLimit = changeTable.getLong("current_limit_per_user");
 
             pctDone++;
 
-            voltQueueSQL(sendMessageToDevice, cellId, policyName, pctDone);
+            voltQueueSQL(sendMessageToDevice, newLimit, cellId, policyName, pctDone);
 
             if (pctDone < 99) {
                 voltQueueSQL(updateStatus, pctDone, cellId, policyName);
