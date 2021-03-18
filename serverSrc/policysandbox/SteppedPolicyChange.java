@@ -102,7 +102,7 @@ public class SteppedPolicyChange extends VoltProcedure {
             
             TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
             
-            System.out.println("time=" + nextChangeTimestamp.toString());
+            System.out.println("time=" + nextChangeExistsTable.getRowCount());
             voltQueueSQL(getChange, nextChangeTimestamp);
             VoltTable changeTable = voltExecuteSQL()[0];
             
