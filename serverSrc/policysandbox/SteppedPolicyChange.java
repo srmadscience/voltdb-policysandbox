@@ -95,7 +95,7 @@ public class SteppedPolicyChange extends VoltProcedure {
 
         voltQueueSQL(findNextChange);
         VoltTable nextChangeExistsTable = voltExecuteSQL()[0];
-  
+
         nextChangeExistsTable.advanceRow();
         TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
 
@@ -111,18 +111,21 @@ public class SteppedPolicyChange extends VoltProcedure {
             byte pctDone = (byte) changeTable.getLong("policy_change_percent_done");
             long newLimit = changeTable.getLong("current_limit_per_user");
 
-            voltQueueSQL(sendMessageToDevice, newLimit, cellId, policyName, ++pctDone);
+            final int maxPctPerPass = 2;
+            int pctThisPass = 0;
+
+            while (pctDone < 99 && ++pctThisPass <= maxPctPerPass) {
+                voltQueueSQL(sendMessageToDevice, newLimit, cellId, policyName, ++pctDone);
+            }
 
             if (pctDone < 99) {
                 voltQueueSQL(updateStatus, pctDone, cellId, policyName);
-                voltQueueSQL(sendMessageToConsole, cellId,
-                        "Cell/Policy " + cellId + "/" + policyName 
-                        + " change to " + newLimit + " @" + nextChangeTimestamp.toString() + " " + pctDone + "% done.");
+                voltQueueSQL(sendMessageToConsole, cellId, "Cell/Policy " + cellId + "/" + policyName + " change to "
+                        + newLimit + " @" + nextChangeTimestamp.toString() + " " + pctDone + "% done.");
             } else {
                 voltQueueSQL(finishTask, cellId, policyName);
-                voltQueueSQL(sendMessageToConsole, cellId,
-                        "Cell/Policy " + cellId + "/" + policyName 
-                        +" change to " + newLimit + " @" + nextChangeTimestamp.toString() + " finished.");
+                voltQueueSQL(sendMessageToConsole, cellId, "Cell/Policy " + cellId + "/" + policyName + " change to "
+                        + newLimit + " @" + nextChangeTimestamp.toString() + " finished.");
             }
 
         }
@@ -131,5 +134,4 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     }
 
-      
 }
