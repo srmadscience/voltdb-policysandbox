@@ -105,7 +105,7 @@ public class ReportNewSession extends VoltProcedure {
 
         String policyName = "";
         long defaultCellTotalCapacity = 1000000;
-        long userCellQuotaPct = 10;
+        long userCellFractionOf = 1000;
         long userCellCapacity = 0;
 
         voltQueueSQL(getPolicy, EXPECT_ONE_ROW, userId);
@@ -114,24 +114,24 @@ public class ReportNewSession extends VoltProcedure {
         policyName = policyResults.getString("policy_name");
 
         voltQueueSQL(getPolicyLimitsByCell, cellId, policyName);
-        voltQueueSQL(getParameter, "USER_CELL_QUOTA_PCT");
+        voltQueueSQL(getParameter, "USER_CELL_FRACTION_OF");
         voltQueueSQL(getParameter, "DEFAULT_CELL_TOTAL_CAPACITY");
 
         VoltTable[] policyLimits = voltExecuteSQL();
 
         VoltTable currentPolicyTableForThisCell = policyLimits[0];
-        VoltTable userCellQuotaPctTable = policyLimits[1];
+        VoltTable userCellFractionTable = policyLimits[1];
         VoltTable defaultCellTotalCapacityTable = policyLimits[2];
 
         if (!currentPolicyTableForThisCell.advanceRow()) {
 
             defaultCellTotalCapacity = getParameter(defaultCellTotalCapacity, defaultCellTotalCapacityTable);
-            userCellQuotaPct = getParameter(userCellQuotaPct, userCellQuotaPctTable);
+            userCellFractionOf = getParameter(userCellFractionOf, userCellFractionTable);
 
             voltQueueSQL(createNewPolicyLimitsByCell, cellId, policyName, defaultCellTotalCapacity,
                     policyResults.getLong("policy_max_bandwidth_per_min"));
 
-            userCellCapacity = (defaultCellTotalCapacity * userCellQuotaPct) / 100;
+            userCellCapacity = defaultCellTotalCapacity /userCellFractionOf;
         } else {
             userCellCapacity = currentPolicyTableForThisCell.getLong("current_limit_per_user");
         }
