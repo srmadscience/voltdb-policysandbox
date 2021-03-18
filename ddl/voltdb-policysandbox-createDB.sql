@@ -339,7 +339,7 @@ VALUES
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('MAX_PCT_PER_STEPPED_CHANGE',2);
+('MAX_PCT_PER_STEPPED_CHANGE',3);
 
 
 

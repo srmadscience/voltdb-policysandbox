@@ -182,7 +182,7 @@ public class ChangePolicies extends VoltProcedure {
                 targetLimitPerUser = minBandwidthPerMin;
             }
 
-            if (enablePolicy) {
+            if (enablePolicy && currentLimitPerUser != targetLimitPerUser) {
 
                 voltQueueSQL(sendMessageToConsole, cellId,
                         "ChangePolicies: " + event + ": Cell/policy " + cellId + "/" + policyName + " is at "
