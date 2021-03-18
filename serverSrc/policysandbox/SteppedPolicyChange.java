@@ -49,7 +49,7 @@ public class SteppedPolicyChange extends VoltProcedure {
     = new SQLStmt("SELECT policy_change_percent_done,cell_id,policy_name "
             + "FROM policy_active_limits_by_cell "
             + "WHERE policy_change_started = ? "
-            + "ORDER BY cell_id,policy_name"
+            + "ORDER BY cell_id,policy_name "
             + "LIMIT 1;");
   
     public static final SQLStmt sendMessageToDevice = new SQLStmt(
