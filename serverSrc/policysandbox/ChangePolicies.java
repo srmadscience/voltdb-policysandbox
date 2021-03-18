@@ -62,7 +62,6 @@ public class ChangePolicies extends VoltProcedure {
     "AND   cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)) " +
     "AND   cas.total_usage_amount > palbc.current_limit_per_cell " +
     "AND   palbc.policy_change_started  IS NULL " +
-    "AND   palbc.last_update_date  <=  TRUNCATE(MINUTE, DATEADD(MINUTE,-2,NOW))" +
     "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
     "LIMIT 20; ");
 
@@ -85,7 +84,6 @@ public class ChangePolicies extends VoltProcedure {
     "AND   cas.usage_timestamp = TRUNCATE(MINUTE, DATEADD(MINUTE,-1,NOW)) " +
     "AND   (cas.total_usage_amount * 1.1) < palbc.current_limit_per_cell " +
     "AND   palbc.policy_change_started  IS NULL " +
-    "AND   palbc.last_update_date  <=  TRUNCATE(MINUTE, DATEADD(MINUTE,-2,NOW))" +
    "ORDER BY cas.cell_id, cas.policy_name, cas.total_usage_amount, palbc.current_limit_per_user " +
     "LIMIT 20; ");
 
