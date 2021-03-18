@@ -93,9 +93,14 @@ public class ReportNewSession extends VoltProcedure {
                     " policy_name," +
                     "current_limit_per_cell, " +
                      "current_limit_per_user, " +
-                                       " last_update_date)  " +
+                     " last_update_date)  " +
                     "VALUES " +
                     "(?,?,?,?,NOW); ");
+
+    public static final SQLStmt sendMessageToConsole = new SQLStmt(
+            "INSERT INTO console_messages  " +
+                    "(thing_id,message_date,message_text) VALUES " +
+                     "(?,NOW,?);");
 
 
 		
@@ -106,7 +111,7 @@ public class ReportNewSession extends VoltProcedure {
         String policyName = "";
         long defaultCellTotalCapacity = 1000000;
         long userCellFractionOf = 1000;
-        long userCellCapacity = 0;
+        long userCellCapacityPerUser = 0;
 
         voltQueueSQL(getPolicy, EXPECT_ONE_ROW, userId);
         VoltTable policyResults = voltExecuteSQL()[0];
@@ -127,13 +132,21 @@ public class ReportNewSession extends VoltProcedure {
 
             defaultCellTotalCapacity = getParameter(defaultCellTotalCapacity, defaultCellTotalCapacityTable);
             userCellFractionOf = getParameter(userCellFractionOf, userCellFractionTable);
+            userCellCapacityPerUser = defaultCellTotalCapacity / userCellFractionOf;
+
+            long maxBandwidthPerUser = policyResults.getLong("policy_max_bandwidth_per_min");
+
+            if (userCellCapacityPerUser < maxBandwidthPerUser) {
+                maxBandwidthPerUser = userCellCapacityPerUser;
+            }
 
             voltQueueSQL(createNewPolicyLimitsByCell, cellId, policyName, defaultCellTotalCapacity,
-                    policyResults.getLong("policy_max_bandwidth_per_min"));
+                    maxBandwidthPerUser);
+            voltQueueSQL(sendMessageToConsole, cellId,
+                    "Created new Cell/Policy " + cellId + "/" + policyName + " with limit of " + maxBandwidthPerUser);
 
-            userCellCapacity = defaultCellTotalCapacity /userCellFractionOf;
         } else {
-            userCellCapacity = currentPolicyTableForThisCell.getLong("current_limit_per_user");
+            userCellCapacityPerUser = currentPolicyTableForThisCell.getLong("current_limit_per_user");
         }
 
         voltQueueSQL(createNewSession, sessionId, sessionStartUTC, cellId, policyName);
@@ -141,7 +154,7 @@ public class ReportNewSession extends VoltProcedure {
 
         VoltTable resultTable = new VoltTable(new VoltTable.ColumnInfo("policy_name", VoltType.STRING),
                 new VoltTable.ColumnInfo("current_limit_per_user", VoltType.BIGINT));
-        resultTable.addRow(policyName, userCellCapacity);
+        resultTable.addRow(policyName, userCellCapacityPerUser);
 
         VoltTable[] voltTableArray = { resultTable };
 
