@@ -136,9 +136,9 @@ public class ChangePolicies extends VoltProcedure {
         long maxSessonsPerChange = 100000;
 
         voltQueueSQL(getParameter, "ENABLE_POLICY_ENFORCEMENT");
-        voltQueueSQL(getParameter, "SHRINK_PCT");
+        voltQueueSQL(getParameter, "MIN_SHRINK_PCT");
         voltQueueSQL(getParameter, "PANIC_SHRINK_PCT");
-        voltQueueSQL(getParameter, "GROW_PCT");
+        voltQueueSQL(getParameter, "MIN_GROW_PCT");
         voltQueueSQL(getParameter, "MAX_SESSIONS_PER_SINGLE_CHANGE");
         voltQueueSQL(findOverloadedCells);
         voltQueueSQL(findUnderloadedCells);
@@ -181,7 +181,15 @@ public class ChangePolicies extends VoltProcedure {
             } else {
                 
                 event = "Shrink:";
-                targetLimitPerUser = (currentLimitPerUser * shrinkPct) / 100;
+
+                long pctAdjust = (cellPctFull - 100) / 2;
+                
+                if (pctAdjust < shrinkPct) {
+                    pctAdjust = shrinkPct;
+                }
+                             
+                targetLimitPerUser = (currentLimitPerUser * (100 - pctAdjust)) / 100;
+                
             }
 
             if (targetLimitPerUser < minBandwidthPerMin) {
@@ -225,7 +233,14 @@ public class ChangePolicies extends VoltProcedure {
             long targetLimitPerUser;
 
             event = "Grow:";
-            targetLimitPerUser = (currentLimitPerUser * growPct) / 100;
+            
+            long pctAdjust = ((cellPctFull - 100) / 2) * -1;
+            
+            if (pctAdjust < growPct) {
+                pctAdjust = growPct;
+            }
+                         
+            targetLimitPerUser = (currentLimitPerUser * (100 - pctAdjust)) / 100;
 
             // fix bug: If your growPct <= <10 and GROW_PCT is 105 you won't get an
             // increase.

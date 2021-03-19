@@ -308,12 +308,12 @@ VALUES
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('SHRINK_PCT',95);
+('MIN_SHRINK_PCT',5);
 
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('GROW_PCT',105);
+('MIN_GROW_PCT',5);
 
 upsert into policy_parameters
 (parameter_name ,parameter_value)
