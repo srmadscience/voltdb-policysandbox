@@ -32,8 +32,8 @@ import org.voltdb.types.TimestampType;
  * This runs on each partition as a DIRECTED PROCEDURE and is kicked off by a
  * TASK.
  * 
- * It finds cells that are busy are adjusts quotas downward in increments of
- * SHRINK_PCT
+ * It finds cells that have unfinished changes and makes them, one percent at a
+ * time...
  *
  */
 public class SteppedPolicyChange extends VoltProcedure {
@@ -44,7 +44,6 @@ public class SteppedPolicyChange extends VoltProcedure {
     = new SQLStmt("SELECT MIN(policy_change_started)  policy_change_started "
             + "FROM policy_active_limits_by_cell;");
 
-  
      public static final SQLStmt getParameter = new SQLStmt(
              "SELECT parameter_value FROM policy_parameters WHERE parameter_name = ? ;");
 
@@ -96,18 +95,16 @@ public class SteppedPolicyChange extends VoltProcedure {
 
     public VoltTable[] run() throws VoltAbortException {
 
-        
         voltQueueSQL(getParameter, "MAX_PCT_PER_STEPPED_CHANGE");
         voltQueueSQL(findNextChange);
-        
+
         VoltTable[] queryResults = voltExecuteSQL();
-        
-        
+
         VoltTable maxPctStepedChangeTable = queryResults[0];
-        final long maxPctPerPass = getParameter(2,maxPctStepedChangeTable);
-       
+        final long maxPctPerPass = getParameter(2, maxPctStepedChangeTable);
+
         VoltTable nextChangeExistsTable = queryResults[1];
-        
+
         nextChangeExistsTable.advanceRow();
         TimestampType nextChangeTimestamp = nextChangeExistsTable.getTimestampAsTimestamp("policy_change_started");
 
@@ -152,5 +149,4 @@ public class SteppedPolicyChange extends VoltProcedure {
         return value;
     }
 
-    
 }
