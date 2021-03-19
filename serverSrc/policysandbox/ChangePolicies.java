@@ -202,7 +202,7 @@ public class ChangePolicies extends VoltProcedure {
 
                 voltQueueSQL(sendMessageToConsole, cellId,
                         "ChangePolicies: " + event + ": Cell/policy " + cellId + "/" + policyName + " is at "
-                                + cellPctFull + "%. Shrinking " + " from " + currentLimitPerUser + " to "
+                                + cellPctFull + "%. Shrinking from " + currentLimitPerUser + " to "
                                 + targetLimitPerUser + " for " + userCount + " users. Current Avg is "
                                 + averageAmountPerUser);
                 voltQueueSQL(updateCellLimit, targetLimitPerUser, cellId, policyName);
@@ -240,7 +240,7 @@ public class ChangePolicies extends VoltProcedure {
                 pctAdjust = growPct;
             }
                          
-            targetLimitPerUser = (currentLimitPerUser * (100 - pctAdjust)) / 100;
+            targetLimitPerUser = (currentLimitPerUser * (100 + pctAdjust)) / 100;
 
             // fix bug: If your growPct <= <10 and GROW_PCT is 105 you won't get an
             // increase.
@@ -257,7 +257,7 @@ public class ChangePolicies extends VoltProcedure {
             if (enablePolicy) {
 
                 voltQueueSQL(sendMessageToConsole, cellId, "ChangePolicies: " + event + ": Cell/policy " + cellId + "/"
-                        + policyName + " is at " + cellPctFull + "%. Growing " + " from " + currentLimitPerUser + " to "
+                        + policyName + " is at " + cellPctFull + "%. Growing by " + pctAdjust + "% from " + currentLimitPerUser + " to "
                         + targetLimitPerUser + " for " + userCount + " users. Current Avg is " + averageAmountPerUser);
                 voltQueueSQL(updateCellLimit, targetLimitPerUser, cellId, policyName);
 
