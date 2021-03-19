@@ -176,7 +176,7 @@ public class ChangePolicies extends VoltProcedure {
             if (cellPctFull > panicShrinkPct) {
 
                 event = "PanicShrink";
-                targetLimitPerUser = (long) ((currentLimitPerUser * panicShrinkPct) / cellPctFull);
+                targetLimitPerUser = (long) ((currentLimitPerUser * panicShrinkPct * .75) / cellPctFull);
 
             } else {
                 
