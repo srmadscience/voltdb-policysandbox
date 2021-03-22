@@ -323,13 +323,12 @@ VALUES
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('USER_CELL_FRACTION_OF',2000);
-
+('DEFAULT_CELL_TOTAL_CAPACITY',2000000000);
+                               
 upsert into policy_parameters
 (parameter_name ,parameter_value)
 VALUES
-('DEFAULT_CELL_TOTAL_CAPACITY',2000000000);
-
+('USER_CELL_FRACTION_OF',2000);
 
 upsert into policy_parameters
 (parameter_name ,parameter_value)
@@ -354,13 +353,13 @@ UPSERT INTO available_policies
 ,policy_start_range,policy_end_range)
 VALUES
 ('EXECUTIVE_PLUS',2000000000,2000,0,10000);
-
+                  
 UPSERT INTO available_policies
 (policy_name, policy_max_bandwidth_per_min, policy_min_bandwidth_per_min
 ,policy_start_range,policy_end_range)
 VALUES
 ('AVERAGE_USER',1000000000,10000,10001,100000);
-
+                
 UPSERT INTO available_policies
 (policy_name, policy_max_bandwidth_per_min, policy_min_bandwidth_per_min
 ,policy_start_range,policy_end_range)
