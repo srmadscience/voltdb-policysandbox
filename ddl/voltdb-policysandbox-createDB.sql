@@ -55,8 +55,6 @@ SELECT cell_id, policy_name
 FROM session_policy_state
 GROUP BY cell_id,policy_name;
 
-
-
 --
 -- Stream to record usage by session.
 --
@@ -105,14 +103,16 @@ CREATE INDEX palbc_ix1 ON policy_active_limits_by_cell(policy_change_started);
 -- Stream so we can tell sessions to limit
 -- their activity
 --
-CREATE STREAM policy_change_session_messages PARTITION ON COLUMN cell_id 
+CREATE STREAM policy_change_session_messages 
+EXPORT TO TOPIC policy_change_session_messages WITH KEY (sessionId)
+PARTITION ON COLUMN cell_id 
 (sessionId bigint not null
 ,sessionStartUTC timestamp not null
 ,changeTimestamp timestamp not null
 ,cell_id bigint not null 
 ,new_limit bigint not null);
 
-CREATE TOPIC USING STREAM policy_change_session_messages PROFILE daily;
+--CREATE TOPIC USING STREAM policy_change_session_messages PROFILE daily;
 
 CREATE VIEW policy_change_counts  AS
 SELECT cell_id
@@ -124,12 +124,14 @@ GROUP BY cell_id
      
 CREATE INDEX pcc_ix1 ON   policy_change_counts(changeTimestamp);   
        
-CREATE STREAM console_messages PARTITION ON COLUMN thing_id 
+CREATE STREAM console_messages 
+EXPORT TO TOPIC console_messages WITH KEY (thing_id,message_date)
+PARTITION ON COLUMN thing_id 
 (thing_id bigint not null 
 ,message_date timestamp not null
 ,message_text varchar(180) not null);
 
-CREATE TOPIC USING STREAM console_messages PROFILE daily;
+--CREATE TOPIC USING STREAM console_messages PROFILE daily;
 
 DROP PROCEDURE findbusycells IF EXISTS;
 
