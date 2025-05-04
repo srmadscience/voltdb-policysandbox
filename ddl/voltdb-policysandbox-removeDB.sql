@@ -33,6 +33,8 @@ DROP TABLE session_policy_state IF EXISTS;
      
 DROP TABLE policy_active_limits_by_cell IF EXISTS;
      
+DROP TABLE demo_parameters IF EXISTS;
+
 DROP STREAM cell_activity IF EXISTS;
 
 DROP STREAM policy_change_session_messages IF EXISTS;

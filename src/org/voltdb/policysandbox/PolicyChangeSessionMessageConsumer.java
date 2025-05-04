@@ -32,8 +32,8 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.log4j.BasicConfigurator;
 
 /**
- * Runnable class to receive policy change messages and update our
- * collection of virtual sessions.
+ * Runnable class to receive policy change messages and update our collection of
+ * virtual sessions.
  *
  */
 public class PolicyChangeSessionMessageConsumer implements Runnable {
@@ -42,22 +42,23 @@ public class PolicyChangeSessionMessageConsumer implements Runnable {
      * Handle for data gebnerator so we can update its sessions
      */
     PolicyDataGenerator pdg = null;
-    
-    /**
-     * Comma delimited list of Kafka hosts. Note we expect the port number with 
-     * each host name
-     */
-     String hostnames;
 
-     /**
-      * Keep running until told to stop..
-      */
+    /**
+     * Comma delimited list of Kafka hosts. Note we expect the port number with each
+     * host name
+     */
+    String hostnames;
+
+    /**
+     * Keep running until told to stop..
+     */
     boolean keepGoing = true;
 
     /**
-     * Create a runnable instance of a class to poll the Kafka topic 
+     * Create a runnable instance of a class to poll the Kafka topic
      * policy_change_session_messages
-     * @param pdg - An instance of our policy session emulator
+     * 
+     * @param pdg       - An instance of our policy session emulator
      * @param hostnames - hostname1:9092,hostname2:9092 etc
      */
     public PolicyChangeSessionMessageConsumer(PolicyDataGenerator pdg, String hostnames) {
@@ -68,9 +69,9 @@ public class PolicyChangeSessionMessageConsumer implements Runnable {
 
     @Override
     public void run() {
-        
+
         try {
-  
+
             Properties props = new Properties();
             props.put("bootstrap.servers", hostnames);
             props.put("group.id", "PolicyChangeSessionMessageConsumer");
@@ -92,7 +93,6 @@ public class PolicyChangeSessionMessageConsumer implements Runnable {
 
                     PolicyChangeMessage newMessage = new PolicyChangeMessage(record.key(), record.value());
 
-
                     pdg.reportPolicyChange(newMessage);
 
                 }
@@ -109,7 +109,7 @@ public class PolicyChangeSessionMessageConsumer implements Runnable {
     /**
      * Stop polling for messages and exit.
      */
-   public void stop() {
+    public void stop() {
         keepGoing = false;
     }
 
