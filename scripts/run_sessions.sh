@@ -9,7 +9,7 @@ then
 
 	echo "Using default parameters"
 
-	USERCOUNT=2000000
+	USERCOUNT=1000000
 	TPMS=20
 	DURATIONSECONDS=7200
 	CELLCOUNT=2
