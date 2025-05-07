@@ -29,4 +29,4 @@ mkdir logs 2> /dev/null
 
 cd voltdb-policysandbox/jars 
 
-java ${JVMOPTS} -jar voltdb-policysandbox-client.jar `cat $HOME/.vdbhostnames`  $USERCOUNT $TPMS $DURATIONSECONDS $CELLCOUNT $OFFSET | tee -a $HOME/logs/sessions.log
+java ${JVMOPTS} -Xmx7362052096 -jar voltdb-policysandbox-client.jar `cat $HOME/.vdbhostnames`  $USERCOUNT $TPMS $DURATIONSECONDS $CELLCOUNT $OFFSET | tee -a $HOME/logs/sessions.log
