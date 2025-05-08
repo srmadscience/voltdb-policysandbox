@@ -62,36 +62,36 @@ import org.voltdb.types.TimestampType;
 public class PolicySession {
 
     /**
-     * We only generate one non-zero record per minute per session as 
-     * part of our simulation.
+     * We only generate one non-zero record per minute per session as part of our
+     * simulation.
      */
     private static final long ONE_MINUTE_MS = 60000;
-    
+
     /**
      * Last time we generated a message. Defaults to 1970.
      */
     private long lastMessageTime = 0;
-    
+
     /**
      * The user this session is for. A user can have multiple sessions.
      */
     private long userId;
-  
+
     /**
      * A session is identified by sessionId + sessionStartUTC
      */
     private long sessionId;
-    
+
     /**
      * A session is identified by sessionId + sessionStartUTC
      */
     private TimestampType sessionStartUTC;
-    
+
     /**
      * Id of 'cell' session is using
      */
     private long cellId;
-    
+
     /**
      * Because we expect to have millions of PolicySessions at the same time we
      * share an instance of Random.
@@ -101,12 +101,13 @@ public class PolicySession {
     /**
      * How much bandwidth we are allowed to use per minute.
      */
-    
+
     private long usageLimit = 1;
-    
+
     /**
-     * Which policy we have. This will be updated by the Callback to ReportNewSessiom,
-     * but its possible for usage to be generated before we get the callback..
+     * Which policy we have. This will be updated by the Callback to
+     * ReportNewSessiom, but its possible for usage to be generated before we get
+     * the callback..
      */
     private String policyName = "NONE";
 
@@ -122,7 +123,13 @@ public class PolicySession {
     SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /**
+     * Whether we remember messages or not...
+     */
+    boolean remember = false;
+
+    /**
      * Create one of millions of Policy Sessions we keeop track of.
+     * 
      * @param sessionStartUTC
      * @param sessionid
      * @param userId
@@ -138,9 +145,10 @@ public class PolicySession {
         this.r = r;
     }
 
-
     /**
-     * Get a usage message. Will be for zero if we have already done so within the last minute.
+     * Get a usage message. Will be for zero if we have already done so within the
+     * last minute.
+     * 
      * @return A new usage message
      */
     public PolicyUsageMessage getNextUsageMessage() {
@@ -198,9 +206,11 @@ public class PolicySession {
      */
     private void msg(String message) {
 
-        Date now = new Date();
-        String strDate = sdfDate.format(now);
-        policyChangeMessages.add(strDate + ":" + message);
+        if (remember) {
+            Date now = new Date();
+            String strDate = sdfDate.format(now);
+            policyChangeMessages.add(strDate + ":" + message);
+        }
 
     }
 
@@ -233,8 +243,8 @@ public class PolicySession {
     }
 
     /**
-     * @return An Object[]  containing the fields in the correct order used 
-     * by the VoltDB procedures ReportNewSession and ReportEndSession
+     * @return An Object[] containing the fields in the correct order used by the
+     *         VoltDB procedures ReportNewSession and ReportEndSession
      */
     public Object[] getParamsForVoltDBCall() {
 
@@ -251,6 +261,7 @@ public class PolicySession {
 
     /**
      * Update our session with a new limit. This will have arrived via Kafka..
+     * 
      * @param policyChangeMessage
      */
     public void changePolicy(PolicyChangeMessage policyChangeMessage) {
@@ -262,7 +273,9 @@ public class PolicySession {
     }
 
     /**
-     * Update our session with a new policy name and limit. This will have arrived via VoltDB..
+     * Update our session with a new policy name and limit. This will have arrived
+     * via VoltDB..
+     * 
      * @param policyName
      * @param usageLimit
      */
@@ -279,6 +292,20 @@ public class PolicySession {
      */
     public TimestampType getSessionStartUTC() {
         return sessionStartUTC;
+    }
+
+    /**
+     * @return the remember
+     */
+    public boolean isRemember() {
+        return remember;
+    }
+
+    /**
+     * @param remember the remember to set
+     */
+    public void setRemember(boolean remember) {
+        this.remember = remember;
     }
 
 }

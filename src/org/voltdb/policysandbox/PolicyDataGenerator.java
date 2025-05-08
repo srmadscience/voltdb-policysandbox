@@ -172,16 +172,19 @@ public class PolicyDataGenerator {
 
             executiveSession = new PolicySession(new TimestampType(), KNOWN_EXECUTIVE_SESSION_ID + offset,
                     KNOWN_EXECUTIVE_SESSION_ID, 0, r);
+            executiveSession.setRemember(true);
             sessionMap.put(KNOWN_EXECUTIVE_SESSION_ID + offset, executiveSession);
             sendNewSessionMessage(executiveSession);
 
             averageSession = new PolicySession(new TimestampType(), KNOWN_AVERAGE_SESSION_ID + offset,
                     KNOWN_AVERAGE_SESSION_ID, 0, r);
+            averageSession.setRemember(true);
             sessionMap.put(KNOWN_AVERAGE_SESSION_ID + offset, averageSession);
             sendNewSessionMessage(averageSession);
 
             studentSession = new PolicySession(new TimestampType(), KNOWN_STUDENT_SESSION_ID + offset,
                     KNOWN_STUDENT_SESSION_ID, 0, r);
+            studentSession.setRemember(true);
             sessionMap.put(KNOWN_STUDENT_SESSION_ID + offset, studentSession);
             sendNewSessionMessage(studentSession);
         }
@@ -463,7 +466,7 @@ public class PolicyDataGenerator {
 
             config = new ClientConfig(); // "admin", "idontknow");
             config.setTopologyChangeAware(true);
-            config.setReconnectOnConnectionLoss(true);
+            //config.setReconnectOnConnectionLoss(true);
 
             client = ClientFactory.createClient(config);
 

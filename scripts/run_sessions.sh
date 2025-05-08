@@ -3,6 +3,12 @@
 . $HOME/.profile
 
 
+TOTALRAM=`cat /proc/meminfo | grep MemTotal | awk '{ print $2 }'`
+QUARTERRAM=`expr ${TOTALRAM} / 4 ` 
+THREEQUARTERRAM=`expr ${QUARTERRAM} \* 3`
+THREEQUARTERRAMBYTES=`expr ${THREEQUARTERRAM} \* 1024`
+echo RAM is ${THREEQUARTERRAMBYTES}
+
 if 
 	[ "$#" -ne 5 ]
 then
@@ -29,4 +35,4 @@ mkdir logs 2> /dev/null
 
 cd voltdb-policysandbox/jars 
 
-java ${JVMOPTS} -Xmx7362052096 -jar voltdb-policysandbox-client.jar `cat $HOME/.vdbhostnames`  $USERCOUNT $TPMS $DURATIONSECONDS $CELLCOUNT $OFFSET | tee -a $HOME/logs/sessions.log
+java ${JVMOPTS} -Xmx${THREEQUARTERRAMBYTES} -jar voltdb-policysandbox-client.jar `cat $HOME/.vdbhostnames`  $USERCOUNT $TPMS $DURATIONSECONDS $CELLCOUNT $OFFSET | tee -a $HOME/logs/sessions.log
