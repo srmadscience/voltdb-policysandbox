@@ -1,4 +1,4 @@
-package org.voltdb.policysandbox;
+package org.voltdb.policy;
 
 /* This file is part of VoltDB.
  * Copyright (C) 2008-2021 VoltDB Inc.
