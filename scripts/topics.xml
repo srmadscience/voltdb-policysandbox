@@ -1,0 +1,4 @@
+<topics enabled="true">
+<topic name="policy_change_session_messages"/>
+<topic name="console_messages"/>
+</topics>
